@@ -1,0 +1,82 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [main]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: fetish-app
+  ECS_CLUSTER: fetish-app-cluster
+  ECS_SERVICE: fetish-app-service
+  ECS_TASK_DEFINITION: fetish-app-task
+  CONTAINER_NAME: fetish-app
+  S3_BUCKET: fetish-app-client
+  CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push Docker image to ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest ./server
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Deploy to Amazon ECS
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_SERVICE }} \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Build client
+        working-directory: ./client
+        run: |
+          npm ci
+          npm run build
+
+      - name: Sync to S3
+        working-directory: ./client
+        run: |
+          aws s3 sync dist/ s3://${{ env.S3_BUCKET }}/ \
+            --delete \
+            --cache-control "no-cache"
+
+      - name: Upload static assets with cache headers
+        working-directory: ./client
+        run: |
+          aws s3 sync dist/assets/ s3://${{ env.S3_BUCKET }}/assets/ \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable"
+
+      - name: Invalidate CloudFront
+        if: env.CLOUDFRONT_DISTRIBUTION_ID != ''
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"

@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-white/5;
+  }
+  body {
+    @apply bg-gray-950 text-gray-100;
+    background-image:
+      radial-gradient(rgba(99, 102, 241, 0.07) 1px, transparent 1px),
+      radial-gradient(rgba(139, 92, 246, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px, 80px 80px;
+    background-position: 0 0, 20px 20px;
+  }
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-white/10 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-white/20;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply backdrop-blur-xl bg-white/5 border border-white/10 shadow-xl;
+  }
+  .glass-hover {
+    @apply hover:bg-white/10 hover:border-white/20 transition-all duration-300;
+  }
+  .gradient-text {
+    @apply bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400 bg-clip-text text-transparent;
+  }
+  .gradient-border {
+    @apply border border-transparent;
+    background-clip: padding-box;
+  }
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.03) 25%,
+      rgba(255, 255, 255, 0.08) 50%,
+      rgba(255, 255, 255, 0.03) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite linear;
+  }
+  .btn-primary {
+    @apply px-6 py-3 rounded-xl font-semibold text-white transition-all duration-300
+      bg-gradient-to-r from-indigo-500 to-violet-500
+      hover:from-indigo-400 hover:to-violet-400
+      hover:shadow-lg hover:shadow-indigo-500/25
+      active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-ghost {
+    @apply px-4 py-2 rounded-xl font-medium text-gray-300
+      hover:text-white hover:bg-white/10
+      transition-all duration-200 active:scale-95;
+  }
+  .input-glass {
+    @apply w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10
+      text-white placeholder-gray-500
+      focus:outline-none focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20
+      transition-all duration-200;
+  }
+  .card {
+    @apply glass rounded-2xl p-6 glass-hover;
+  }
+  .stat-number {
+    @apply text-4xl font-bold gradient-text;
+    text-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
+  }
+}

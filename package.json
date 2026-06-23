@@ -1,0 +1,12 @@
+{
+  "name": "fetish-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Premium habit tracking app with AWS-native architecture",
+  "scripts": {
+    "install:all": "cd client && npm install && cd ../server && npm install",
+    "dev": "cd server && npm run dev",
+    "build": "cd client && npm run build",
+    "deploy": "cd infrastructure && bash setup.sh"
+  }
+}

@@ -40,7 +40,7 @@ export default function HabitProgress({ progress = [], color = '#6366f1' }) {
           className="flex flex-col items-center gap-1"
         >
           <motion.div
-            className="w-6 rounded-md transition-all duration-300"
+            className="w-5 sm:w-6 rounded-md transition-all duration-300"
             style={{
               height: day.completed ? '100%' : '40%',
               background: day.completed

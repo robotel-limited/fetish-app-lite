@@ -28,8 +28,8 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="p-6 max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div className="p-4 sm:p-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="glass rounded-2xl p-6">
               <div className="h-4 w-20 rounded shimmer mb-3" />
@@ -39,7 +39,7 @@ export default function Dashboard() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="glass rounded-2xl p-5">
+            <div key={i} className="glass rounded-2xl p-4 sm:p-5">
               <div className="h-10 w-10 rounded-xl shimmer mb-3" />
               <div className="h-5 w-3/4 rounded shimmer mb-2" />
               <div className="h-3 w-1/2 rounded shimmer" />
@@ -52,8 +52,8 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="p-6 max-w-6xl mx-auto">
-        <div className="glass rounded-2xl p-8 text-center">
+      <div className="p-4 sm:p-6 max-w-6xl mx-auto">
+        <div className="glass rounded-2xl p-4 sm:p-8 text-center">
           <p className="text-red-400 mb-4">{error}</p>
           <button onClick={() => window.location.reload()} className="btn-primary text-sm">
             Retry
@@ -71,11 +71,11 @@ export default function Dashboard() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="p-6 max-w-6xl mx-auto space-y-8"
+      className="p-4 sm:p-6 max-w-6xl mx-auto space-y-6 sm:space-y-8"
     >
       {/* Welcome */}
       <div>
-        <h1 className="text-3xl font-bold gradient-text">Dashboard</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Dashboard</h1>
         <p className="text-gray-400 mt-1">Here's your progress overview</p>
       </div>
 
@@ -92,7 +92,7 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="glass rounded-2xl p-5"
+            className="glass rounded-2xl p-4 sm:p-5"
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-gray-400">{stat.label}</span>
@@ -112,7 +112,7 @@ export default function Dashboard() {
 
       {/* Habits Overview */}
       <div>
-        <h2 className="text-xl font-semibold text-white mb-4">Today's Habits</h2>
+        <h2 className="text-lg sm:text-xl font-semibold text-white mb-4">Today's Habits</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {habits.map((habit, i) => (
             <motion.div
@@ -120,10 +120,10 @@ export default function Dashboard() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="glass rounded-2xl p-5"
+              className="glass rounded-2xl p-4 sm:p-5"
             >
               <div className="flex items-center gap-3 mb-3">
-                <span className="text-2xl">{habit.emoji}</span>
+                <span className="text-xl sm:text-2xl">{habit.emoji}</span>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-white truncate">{habit.name}</p>
                   <div className="flex items-center gap-2 mt-0.5">

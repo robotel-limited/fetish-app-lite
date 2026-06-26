@@ -60,7 +60,7 @@ export default function Landing() {
             F
           </motion.div>
 
-          <h1 className="text-5xl md:text-7xl font-black mb-4 leading-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black mb-4 leading-tight">
             Build{' '}
             <span className="gradient-text">Better</span>{' '}
             Habits
@@ -70,7 +70,7 @@ export default function Landing() {
           </p>
 
           {/* Auth form */}
-          <div className="glass rounded-2xl p-8 text-left">
+          <div className="glass rounded-2xl p-4 sm:p-8 text-left">
             <div className="flex mb-6 rounded-xl bg-gray-900/50 p-1">
               <button
                 onClick={() => setIsLogin(true)}
@@ -143,7 +143,7 @@ export default function Landing() {
       {/* Features */}
       <section className="py-24 px-4">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-16 gradient-text">Everything you need</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-10 sm:mb-16 gradient-text">Everything you need</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               { icon: '🔥', title: 'Streak Tracking', desc: 'Build and maintain streaks with visual progress bars and motivational feedback.' },
@@ -173,9 +173,9 @@ export default function Landing() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="glass rounded-3xl p-12 max-w-2xl mx-auto"
+          className="glass rounded-3xl p-6 sm:p-12 max-w-2xl mx-auto"
         >
-          <h2 className="text-3xl font-bold mb-4 gradient-text">Ready to transform?</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4 gradient-text">Ready to transform?</h2>
           <p className="text-gray-400 mb-8">Start tracking your habits today. It's free.</p>
           <button
             onClick={() => {

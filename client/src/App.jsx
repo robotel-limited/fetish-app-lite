@@ -34,7 +34,7 @@ export default function App() {
       <Navbar />
       <div className="flex flex-1">
         {user && <Sidebar />}
-        <main className={`flex-1 ${user ? 'ml-64' : ''} pt-16 min-h-screen`}>
+        <main className={`flex-1 ${user ? 'ml-0 md:ml-64' : ''} pt-16 min-h-screen`}>
           <AnimatePresence mode="wait">
             <Routes>
               <Route path="/" element={user ? <Dashboard /> : <Landing />} />

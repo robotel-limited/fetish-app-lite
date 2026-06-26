@@ -13,11 +13,11 @@ export default function Profile() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="p-6 max-w-3xl mx-auto"
+      className="p-4 sm:p-6 max-w-3xl mx-auto"
     >
-      <h1 className="text-3xl font-bold gradient-text mb-8">Profile</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold gradient-text mb-6 sm:mb-8">Profile</h1>
 
-      <div className="glass rounded-2xl p-8">
+      <div className="glass rounded-2xl p-4 sm:p-8">
         <div className="flex items-center gap-6 mb-8">
           <img
             src={user?.avatarUrl || `https://ui-avatars.com/api/?name=${user?.displayName}&background=6366f1&color=fff&size=80`}

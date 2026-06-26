@@ -79,34 +79,38 @@ export default function HabitCard({ habit, onLog, onEdit, onDelete }) {
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2 mt-4 pt-3 border-t border-white/5">
-        {!habit.completedToday && (
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => onLog(habit.id)}
-            className="flex-1 py-2 text-sm font-medium rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white hover:from-indigo-400 hover:to-violet-400 transition-all duration-200"
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-4 pt-3 border-t border-white/5">
+        <div className="flex-1">
+          {!habit.completedToday && (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => onLog(habit.id)}
+              className="w-full py-2 text-sm font-medium rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white hover:from-indigo-400 hover:to-violet-400 transition-all duration-200"
+            >
+              Log Progress
+            </motion.button>
+          )}
+          {habit.completedToday && (
+            <div className="w-full py-2 text-sm font-medium rounded-xl bg-green-500/10 text-green-400 text-center border border-green-500/20">
+              ✓ Completed
+            </div>
+          )}
+        </div>
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={() => onEdit(habit)}
+            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
           >
-            Log Progress
-          </motion.button>
-        )}
-        {habit.completedToday && (
-          <div className="flex-1 py-2 text-sm font-medium rounded-xl bg-green-500/10 text-green-400 text-center border border-green-500/20">
-            ✓ Completed
-          </div>
-        )}
-        <button
-          onClick={() => onEdit(habit)}
-          className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
-        >
-          ✏️
-        </button>
-        <button
-          onClick={() => onDelete(habit.id)}
-          className="p-2 rounded-xl bg-white/5 hover:bg-red-500/10 text-gray-400 hover:text-red-400 transition-all"
-        >
-          🗑️
-        </button>
+            ✏️
+          </button>
+          <button
+            onClick={() => onDelete(habit.id)}
+            className="p-2 rounded-xl bg-white/5 hover:bg-red-500/10 text-gray-400 hover:text-red-400 transition-all"
+          >
+            🗑️
+          </button>
+        </div>
       </div>
     </motion.div>
   );

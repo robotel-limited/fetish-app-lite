@@ -113,7 +113,7 @@ app.get('*', (req, res) => {
 app.use(errorHandler);
 
 // Start server
-app.listen(env.port, () => {
+app.listen(env.port, '0.0.0.0', () => {
   console.log(`🚀 Fetish App Lite server running on port ${env.port} in ${env.nodeEnv} mode`);
 });
 

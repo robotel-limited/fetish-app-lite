@@ -1,33 +1,35 @@
-import { query } from '../config/db.js';
+import crypto from 'crypto';
+import { query, queryOne, execute } from '../config/db.js';
 
 /**
  * Create a new habit
  * @param {object} data - { user_id, name, emoji, description, frequency, target_count, target_unit, color }
- * @returns {Promise<object>}
+ * @returns {object}
  */
 export async function createHabit(data) {
-  const res = await query(
-    `INSERT INTO habits (user_id, name, emoji, description, frequency, target_count, target_unit, color)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-     RETURNING *`,
-    [data.user_id, data.name, data.emoji, data.description, data.frequency, data.target_count, data.target_unit, data.color]
+  const id = crypto.randomUUID();
+  execute(
+    `INSERT INTO habits (id, user_id, name, emoji, description, frequency, target_count, target_unit, color)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, data.user_id, data.name, data.emoji || '📌', data.description || '', data.frequency || 'daily', data.target_count || 1, data.target_unit || '', data.color || '#6366f1']
   );
-  return res.rows[0];
+  return queryOne('SELECT * FROM habits WHERE id = ?', [id]);
 }
 
 /**
  * Get habits for a user with optional pagination
  * @param {string} userId
  * @param {object} options - { limit, offset, active_only }
- * @returns {Promise<{ habits: Array, total: number }>}
+ * @returns {{ habits: Array, total: number }}
  */
 export async function getHabitsByUser(userId, { limit = 20, offset = 0, active_only = true } = {}) {
-  const whereClause = active_only ? 'WHERE user_id = $1 AND is_active = true' : 'WHERE user_id = $1';
-  const countRes = await query(`SELECT COUNT(*) FROM habits ${whereClause}`, [userId]);
-  const total = parseInt(countRes.rows[0].count, 10);
+  const countWhere = active_only ? 'WHERE user_id = ? AND is_active = 1' : 'WHERE user_id = ?';
+  const countRes = queryOne(`SELECT COUNT(*) AS count FROM habits ${countWhere}`, [userId]);
+  const total = countRes ? countRes.count : 0;
 
-  const res = await query(
-    `SELECT * FROM habits ${whereClause} ORDER BY created_at ASC LIMIT $2 OFFSET $3`,
+  const habitsWhere = active_only ? 'WHERE user_id = ? AND is_active = 1' : 'WHERE user_id = ?';
+  const res = query(
+    `SELECT * FROM habits ${habitsWhere} ORDER BY created_at ASC LIMIT ? OFFSET ?`,
     [userId, limit, offset]
   );
   return { habits: res.rows, total };
@@ -36,11 +38,10 @@ export async function getHabitsByUser(userId, { limit = 20, offset = 0, active_o
 /**
  * Get a single habit by ID
  * @param {string} id
- * @returns {Promise<object|null>}
+ * @returns {object|null}
  */
 export async function getHabitById(id) {
-  const res = await query('SELECT * FROM habits WHERE id = $1', [id]);
-  return res.rows[0] || null;
+  return queryOne('SELECT * FROM habits WHERE id = ?', [id]);
 }
 
 /**
@@ -48,38 +49,34 @@ export async function getHabitById(id) {
  * @param {string} id
  * @param {string} userId
  * @param {object} updates
- * @returns {Promise<object|null>}
+ * @returns {object|null}
  */
 export async function updateHabit(id, userId, updates) {
   const fields = [];
   const values = [];
-  let idx = 1;
   for (const [key, val] of Object.entries(updates)) {
     if (val !== undefined) {
-      fields.push(`${key} = $${idx++}`);
+      fields.push(`${key} = ?`);
       values.push(val);
     }
   }
   if (fields.length === 0) return getHabitById(id);
-  fields.push('updated_at = NOW()');
+  fields.push('updated_at = datetime(\'now\')');
   values.push(id, userId);
-  const res = await query(
-    `UPDATE habits SET ${fields.join(', ')} WHERE id = $${idx} AND user_id = $${idx + 1} RETURNING *`,
-    values
-  );
-  return res.rows[0] || null;
+  execute(`UPDATE habits SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`, values);
+  return queryOne('SELECT * FROM habits WHERE id = ?', [id]);
 }
 
 /**
  * Delete a habit (soft delete by setting is_active = false)
  * @param {string} id
  * @param {string} userId
- * @returns {Promise<boolean>}
+ * @returns {boolean}
  */
 export async function deleteHabit(id, userId) {
-  const res = await query(
-    'UPDATE habits SET is_active = false, updated_at = NOW() WHERE id = $1 AND user_id = $2 RETURNING id',
+  const info = execute(
+    'UPDATE habits SET is_active = 0, updated_at = datetime(\'now\') WHERE id = ? AND user_id = ?',
     [id, userId]
   );
-  return res.rowCount > 0;
+  return info.changes > 0;
 }

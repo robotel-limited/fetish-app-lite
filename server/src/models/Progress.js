@@ -1,20 +1,34 @@
-import { query } from '../config/db.js';
+import crypto from 'crypto';
+import { query, queryOne, execute } from '../config/db.js';
 
 /**
  * Log progress for a habit on a given date
  * @param {object} data - { habit_id, user_id, date, count, note }
- * @returns {Promise<object>}
+ * @returns {object}
  */
 export async function logProgress({ habit_id, user_id, date, count = 1, note }) {
-  const res = await query(
-    `INSERT INTO progress (habit_id, user_id, date, count, note)
-     VALUES ($1, $2, $3, $4, $5)
-     ON CONFLICT (habit_id, user_id, date)
-     DO UPDATE SET count = progress.count + EXCLUDED.count, note = COALESCE(EXCLUDED.note, progress.note)
-     RETURNING *`,
-    [habit_id, user_id, date, count, note]
+  // Try UPDATE first (upsert pattern for SQLite)
+  const existing = queryOne(
+    'SELECT id FROM progress WHERE habit_id = ? AND user_id = ? AND date = ?',
+    [habit_id, user_id, date || new Date().toISOString().split('T')[0]]
   );
-  return res.rows[0];
+
+  if (existing) {
+    execute(
+      `UPDATE progress SET count = count + ?, note = COALESCE(?, note) WHERE id = ?`,
+      [count, note || null, existing.id]
+    );
+    return queryOne('SELECT * FROM progress WHERE id = ?', [existing.id]);
+  }
+
+  const id = crypto.randomUUID();
+  const today = new Date().toISOString().split('T')[0];
+  execute(
+    `INSERT INTO progress (id, habit_id, user_id, date, count, note)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [id, habit_id, user_id, date || today, count, note || '']
+  );
+  return queryOne('SELECT * FROM progress WHERE id = ?', [id]);
 }
 
 /**
@@ -23,14 +37,14 @@ export async function logProgress({ habit_id, user_id, date, count = 1, note }) 
  * @param {string} userId
  * @param {Date} startDate
  * @param {Date} endDate
- * @returns {Promise<Array>}
+ * @returns {Array}
  */
 export async function getProgress(habitId, userId, startDate, endDate) {
-  const res = await query(
+  const res = query(
     `SELECT * FROM progress
-     WHERE habit_id = $1 AND user_id = $2 AND date >= $3 AND date <= $4
+     WHERE habit_id = ? AND user_id = ? AND date >= ? AND date <= ?
      ORDER BY date ASC`,
-    [habitId, userId, startDate, endDate]
+    [habitId, userId, startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]]
   );
   return res.rows;
 }
@@ -38,14 +52,14 @@ export async function getProgress(habitId, userId, startDate, endDate) {
 /**
  * Get today's progress for all active habits of a user
  * @param {string} userId
- * @returns {Promise<Array>}
+ * @returns {Array}
  */
 export async function getTodayProgress(userId) {
-  const res = await query(
+  const res = query(
     `SELECT p.*, h.name, h.emoji, h.color, h.target_count
      FROM progress p
      JOIN habits h ON p.habit_id = h.id
-     WHERE p.user_id = $1 AND p.date = CURRENT_DATE
+     WHERE p.user_id = ? AND p.date = date('now')
      ORDER BY h.created_at ASC`,
     [userId]
   );
@@ -54,20 +68,22 @@ export async function getTodayProgress(userId) {
 
 /**
  * Get streak count for a habit
+ * In SQLite, julianday() converts TEXT dates to numbers for arithmetic.
+ * ROW_NUMBER() window functions work in SQLite 3.25+.
  * @param {string} habitId
  * @param {string} userId
- * @returns {Promise<number>}
+ * @returns {number}
  */
 export async function getStreak(habitId, userId) {
-  const res = await query(
+  const row = queryOne(
     `WITH daily AS (
        SELECT date FROM progress
-       WHERE habit_id = $1 AND user_id = $2
+       WHERE habit_id = ? AND user_id = ?
        ORDER BY date DESC
      ),
      streaks AS (
        SELECT date,
-              date - ROW_NUMBER() OVER (ORDER BY date)::int AS grp
+              julianday(date) - ROW_NUMBER() OVER (ORDER BY date) AS grp
        FROM daily
      )
      SELECT COUNT(*) AS streak
@@ -75,34 +91,36 @@ export async function getStreak(habitId, userId) {
      WHERE grp = (SELECT grp FROM streaks LIMIT 1)`,
     [habitId, userId]
   );
-  return parseInt(res.rows[0]?.streak || 0, 10);
+  return row ? row.streak : 0;
 }
 
 /**
  * Get all streaks for a user's habits
+ * SQLite doesn't support LATERAL joins, so we compute in JS.
  * @param {string} userId
- * @returns {Promise<Array>}
+ * @returns {Array}
  */
 export async function getAllStreaks(userId) {
-  const res = await query(
-    `SELECT h.id, h.name, h.emoji, h.color, COALESCE(s.streak, 0) AS streak
+  const res = query(
+    `SELECT h.id, h.name, h.emoji, h.color
      FROM habits h
-     LEFT JOIN LATERAL (
-       WITH daily AS (
-         SELECT date FROM progress
-         WHERE habit_id = h.id AND user_id = $1
-         ORDER BY date DESC
-       ),
-       streaks AS (
-         SELECT date, date - ROW_NUMBER() OVER (ORDER BY date)::int AS grp
-         FROM daily
-       )
-       SELECT COUNT(*) AS streak FROM streaks
-       WHERE grp = (SELECT grp FROM streaks LIMIT 1)
-     ) s ON true
-     WHERE h.user_id = $1 AND h.is_active = true
+     WHERE h.user_id = ? AND h.is_active = 1
      ORDER BY h.created_at ASC`,
     [userId]
   );
-  return res.rows;
+  const habits = res.rows;
+
+  // Compute streaks for each habit
+  const results = [];
+  for (const habit of habits) {
+    const streak = await getStreak(habit.id, userId);
+    results.push({
+      id: habit.id,
+      name: habit.name,
+      emoji: habit.emoji,
+      color: habit.color,
+      streak,
+    });
+  }
+  return results;
 }

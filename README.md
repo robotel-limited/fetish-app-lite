@@ -11,7 +11,7 @@ npm install
 npm start
 ```
 
-Open **http://localhost:3001** — that's it.
+Open **http://localhost:3201** — that's it.
 
 > The first time the server starts, it automatically creates the SQLite database and runs migrations. Seeded habits are created when you register.
 

@@ -1,16 +1,39 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import GoogleLoginButton from '../components/auth/GoogleLoginButton';
 import { useAuth } from '../hooks/useAuth';
+import toast from 'react-hot-toast';
 
 /**
- * Landing page with hero section and feature showcase
+ * Landing page with login/register form
  * @returns {JSX.Element}
  */
 export default function Landing() {
-  const { user } = useAuth();
+  const { user, login, register } = useAuth();
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   if (user) return null;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      if (isLogin) {
+        await login(email, password);
+        toast.success('Welcome back!');
+      } else {
+        await register(email, password, displayName);
+        toast.success('Account created!');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error?.message || 'Something went wrong');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -26,7 +49,7 @@ export default function Landing() {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="relative z-10 text-center max-w-3xl mx-auto"
+          className="relative z-10 text-center max-w-md mx-auto w-full"
         >
           <motion.div
             initial={{ scale: 0 }}
@@ -37,20 +60,79 @@ export default function Landing() {
             F
           </motion.div>
 
-          <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight">
+          <h1 className="text-5xl md:text-7xl font-black mb-4 leading-tight">
             Build{' '}
             <span className="gradient-text">Better</span>{' '}
             Habits
           </h1>
-          <p className="text-xl text-gray-400 mb-8 max-w-xl mx-auto">
-            Track your daily routines, build unstoppable streaks, and transform your life — one habit at a time.
+          <p className="text-gray-400 mb-8">
+            Track your daily routines, build unstoppable streaks.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <GoogleLoginButton />
+          {/* Auth form */}
+          <div className="glass rounded-2xl p-8 text-left">
+            <div className="flex mb-6 rounded-xl bg-gray-900/50 p-1">
+              <button
+                onClick={() => setIsLogin(true)}
+                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${isLogin ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => setIsLogin(false)}
+                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${!isLogin ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}
+              >
+                Register
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {!isLogin && (
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Name</label>
+                  <input
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-gray-900/60 border border-gray-800 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                    placeholder="Your name"
+                  />
+                </div>
+              )}
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-gray-900/60 border border-gray-800 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                  placeholder="you@example.com"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-gray-900/60 border border-gray-800 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                  placeholder="At least 6 characters"
+                  required
+                  minLength={6}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold hover:from-indigo-500 hover:to-violet-500 transition-all disabled:opacity-50"
+              >
+                {submitting ? 'Please wait...' : isLogin ? 'Sign In' : 'Create Account'}
+              </button>
+            </form>
           </div>
 
-          <div className="mt-12 flex items-center justify-center gap-8 text-sm text-gray-500">
+          <div className="mt-8 flex items-center justify-center gap-6 text-sm text-gray-500">
             <span className="flex items-center gap-2">🔥 Streak tracking</span>
             <span className="flex items-center gap-2">📊 Analytics</span>
             <span className="flex items-center gap-2">🎯 Daily goals</span>
@@ -95,7 +177,18 @@ export default function Landing() {
         >
           <h2 className="text-3xl font-bold mb-4 gradient-text">Ready to transform?</h2>
           <p className="text-gray-400 mb-8">Start tracking your habits today. It's free.</p>
-          <GoogleLoginButton />
+          <button
+            onClick={() => {
+              setEmail('');
+              setPassword('');
+              setDisplayName('');
+              setIsLogin(false);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="px-8 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold hover:from-indigo-500 hover:to-violet-500 transition-all"
+          >
+            Get Started
+          </button>
         </motion.div>
       </section>
     </div>

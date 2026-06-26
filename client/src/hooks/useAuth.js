@@ -3,7 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 
 /**
  * Hook to access authentication context
- * @returns {{ user: object|null, loading: boolean, loginWithGoogle: Function, logout: Function }}
+ * @returns {{ user: object|null, loading: boolean, login: Function, register: Function, logout: Function }}
  */
 export function useAuth() {
   const context = useContext(AuthContext);

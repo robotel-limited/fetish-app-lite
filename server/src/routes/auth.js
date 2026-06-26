@@ -1,38 +1,71 @@
 import { Router } from 'express';
-import { OAuth2Client } from 'google-auth-library';
-import jwt from 'jsonwebtoken';
-import authConfig from '../config/auth.js';
+import bcrypt from 'bcryptjs';
 import * as User from '../models/User.js';
 import { authenticate, generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../middleware/auth.js';
 
 const router = Router();
 
 /**
- * POST /api/auth/google
- * Google OAuth login/signup
+ * POST /api/auth/register
+ * Create a new user with email + password
  */
-router.post('/google', async (req, res, next) => {
+router.post('/register', async (req, res, next) => {
   try {
-    const { credential } = req.body;
-    if (!credential) {
-      return res.status(400).json({ success: false, error: { code: 'MISSING_CREDENTIAL', message: 'Google credential is required' } });
+    const { email, password, display_name } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: { code: 'MISSING_FIELDS', message: 'Email and password are required' } });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, error: { code: 'WEAK_PASSWORD', message: 'Password must be at least 6 characters' } });
     }
 
-    const client = new OAuth2Client(authConfig.google.clientId);
-    const ticket = await client.verifyIdToken({
-      idToken: credential,
-      audience: authConfig.google.clientId,
-    });
-    const payload = ticket.getPayload();
+    const existing = await User.findByEmail(email);
+    if (existing) {
+      return res.status(409).json({ success: false, error: { code: 'EMAIL_EXISTS', message: 'An account with this email already exists' } });
+    }
 
-    let user = await User.findByGoogleId(payload.sub);
+    const password_hash = await bcrypt.hash(password, 12);
+    const user = await User.createUser({
+      email,
+      display_name: display_name || email.split('@')[0],
+      password_hash,
+    });
+
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
+
+    res.status(201).json({
+      success: true,
+      data: {
+        user: { id: user.id, email: user.email, displayName: user.display_name, avatarUrl: user.avatar_url },
+        accessToken,
+        refreshToken,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/auth/login
+ * Authenticate with email + password
+ */
+router.post('/login', async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: { code: 'MISSING_FIELDS', message: 'Email and password are required' } });
+    }
+
+    const user = await User.findByEmail(email);
     if (!user) {
-      user = await User.createUser({
-        email: payload.email,
-        display_name: payload.name,
-        avatar_url: payload.picture,
-        google_id: payload.sub,
-      });
+      return res.status(401).json({ success: false, error: { code: 'INVALID_CREDENTIALS', message: 'Invalid email or password' } });
+    }
+
+    const valid = await bcrypt.compare(password, user.password_hash);
+    if (!valid) {
+      return res.status(401).json({ success: false, error: { code: 'INVALID_CREDENTIALS', message: 'Invalid email or password' } });
     }
 
     const accessToken = generateAccessToken(user.id);

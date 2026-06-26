@@ -1,12 +1,12 @@
 {
-  "name": "fetish-app",
+  "name": "fetish-app-lite",
   "version": "1.0.0",
   "private": true,
-  "description": "Premium habit tracking app with AWS-native architecture",
+  "description": "A simple, self-contained habit tracker — SQLite, email/password auth, single-command install",
   "scripts": {
-    "install:all": "cd client && npm install && cd ../server && npm install",
-    "dev": "cd server && npm run dev",
+    "postinstall": "cd client && npm install && cd ../server && npm install",
     "build": "cd client && npm run build",
-    "deploy": "cd infrastructure && bash setup.sh"
+    "start": "cd server && node src/index.js",
+    "migrate": "node scripts/migrate.js"
   }
 }

@@ -9,5 +9,5 @@ export default {
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || 'fallback_dev_refresh',
   jwtExpiry: process.env.JWT_EXPIRY || '15m',
   jwtRefreshExpiry: process.env.JWT_REFRESH_EXPIRY || '7d',
-  clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+  clientUrl: process.env.CLIENT_URL || 'http://localhost:3201',
 };

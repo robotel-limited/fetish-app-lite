@@ -11,7 +11,7 @@ const router = Router();
  */
 router.post('/register', async (req, res, next) => {
   try {
-    const { email, password, display_name } = req.body;
+    const { email, password, display_name, displayName } = req.body;
     if (!email || !password) {
       return res.status(400).json({ success: false, error: { code: 'MISSING_FIELDS', message: 'Email and password are required' } });
     }
@@ -24,10 +24,11 @@ router.post('/register', async (req, res, next) => {
       return res.status(409).json({ success: false, error: { code: 'EMAIL_EXISTS', message: 'An account with this email already exists' } });
     }
 
+    const name = display_name || displayName || email.split('@')[0];
     const password_hash = await bcrypt.hash(password, 12);
     const user = await User.createUser({
       email,
-      display_name: display_name || email.split('@')[0],
+      display_name: name,
       password_hash,
     });
 

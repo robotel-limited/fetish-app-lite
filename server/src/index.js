@@ -64,8 +64,11 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(compression());
 
 // CORS
+const corsOrigin = env.nodeEnv === 'development'
+  ? true
+  : env.clientUrl;
 app.use(cors({
-  origin: env.clientUrl,
+  origin: corsOrigin,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
